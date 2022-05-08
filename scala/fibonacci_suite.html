@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>🦸‍♂️ Coding Interview Hero 🦸‍♀️ - Fibonacci suite</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/cyborg/bootstrap.min.css" integrity="sha384-nEnU7Ae+3lD52AK+RGNzgieBWMnEfgTbRHIwEvp1XXPdqdO6uLTd/NwXbzboqjc2" crossorigin="anonymous">
+    <link rel="stylesheet" href="../style.css">
+    <script async defer src="https://buttons.github.io/buttons.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/felipec.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/languages/scala.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script>
+      MathJax = {
+        options: {
+          enableMenu: false
+        }
+      };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7SQG7BKNBR"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-7SQG7BKNBR');
+    </script>
+  </head>
+  <body>
+    <div class="container-xxl">
+      <h1 class="text-center">🦸‍♂️ Coding Interview Hero 🦸‍♀️</h1>
+      <h2 class="text-center">Fibonacci suite</h2>
+      <br>
+      <h5><u>Exercice:</u> compute n<sup>th</sup> element of <a href="https://en.wikipedia.org/wiki/Fibonacci_number"> Fibonacci suite</a> using a recursive function. F<sub>0</sub> = F<sub>1</sub> = 1 and F<sub>n+2</sub> = F<sub>n+1</sub> + F<sub>n</sub></h5>
+      <h6>You can assume n is positive.</h6>
+      <pre>
+        <code class="language-scala">def fibonacci(n: Int): BigInt = n match {
+  case 0 | 1 => n
+  case _ => Fibonacci(n - 2) + Fibonacci(n - 1)
+}</code>
+      </pre>
+      <h5><u>Question</u>: what is the time complexity? $$ T_n = T_{n-1} + T_{n-2} + O(1) $$</h5>
+      <h5>We can approximate lower and upper bounds: $$ O(2^{\frac{n}{2}}) \leq T_n \leq O(2^n) $$</h5>
+      <h5>And if you are good at maths (<a href="https://en.wikipedia.org/wiki/Fibonacci_number#Relation_to_the_golden_ratio">useful inputs here</a>), you can even prove that: $$ T_n = O(\phi^n) $$</h5>
+      <h5>This is really poor (exponential complexity) and on an average laptop it will take several seconds just to compute the 20th element. To be more concrete, let's use JMH (<a href="../tools/jmh.html">why you should always use JMH</a>) to run a benchmark:</h5>
+      <pre>
+        <code class="language-scala">package fibonacci
+
+import org.openjdk.jmh.annotations.{Benchmark, Fork, Measurement, Warmup}
+import org.openjdk.jmh.infra.Blackhole
+
+class FibonacciBenchmark {
+  def fibonacci(n: Int): BigInt = n match {
+    case 0 | 1 => n
+    case _ => fibonacci(n - 2) + fibonacci(n - 1)
+  }
+
+  def iterativeFibonacci(n: Int): BigInt = {
+    var a: BigInt = 0
+    var b: BigInt = 1
+    var i = 0
+
+    while (i < n) {
+      val tmp: BigInt = a + b
+      a = b
+      b = tmp
+      i = i + 1
+    }
+
+    a
+  }
+
+  @Benchmark
+  @Warmup(iterations = 2)
+  @Fork(value = 2)
+  @Measurement(iterations = 2)
+  def recursive(blackHole: Blackhole): BigInt = {
+    val fib20 = fibonacci(20)
+    blackHole.consume(fib20)
+    fib20
+  }
+
+  @Benchmark
+  @Warmup(iterations = 2)
+  @Fork(value = 2)
+  @Measurement(iterations = 2)
+  def iterative(blackHole: Blackhole): BigInt = {
+    val fib20 = iterativeFibonacci(20)
+    blackHole.consume(fib20)
+    fib20
+  }
+}</code>
+      </pre>
+      <h5>Then running <code>sbt run jmh:run</code> will produce such output:</h5>
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Benchmark</th>
+            <th scope="col">Mode</th>
+            <th scope="col">Threads</th>
+            <th scope="col">Samples</th>
+            <th scope="col">Score</th>
+            <th scope="col">Score Error (99,9%)</th>
+            <th scope="col">Unit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>fibonacci.FibonacciBenchmark.recursive</td>
+            <td>thrpt</td>
+            <td>1</td>
+            <td>4</td>
+            <td>5962,057514</td>
+            <td>557,707975</td>
+            <td>ops/s</td>
+          </tr>
+          <tr>
+            <td>fibonacci.FibonacciBenchmark.iterative</td>
+            <td>thrpt</td>
+            <td>1</td>
+            <td>4</td>
+            <td>3703413,835</td>
+            <td>308887,785</td>
+            <td>ops/s</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="w-100 d-flex aligns-items-center justify-content-center pb-4">
+        <div class="chart-wrap">
+          <div class="grid horizontal">
+            <div class="bar" style="--bar-value:100%;" data-name="Iterative score 100%" title="Iterative score 100%"></div>
+            <div class="bar" style="--bar-value:0.14%;" data-name="Recursive score 0.14%" title="Recursive score 0.14%"></div>              
+          </div>
+        </div>
+      </div>
+
+      <h5><u>Exercice:</u> use the tail recursion to improve the performances.</h5>
+      <pre>
+        <code class="language-scala">@tailrec
+private def tailRecFibonacci(n: Int, a: BigInt = 0, b: BigInt = 1) : BigInt = n match {
+  case 0 => a
+  case 1 => b
+  case _ => tailRecFibonacci(n - 1, b, a + b)
+}</code>
+      </pre>
+      <h5><u>Question:</u> what is the time complexity? $$ T_n = O(n) $$</h5>
+      <h5>Let's add a benchmark and compare the results:</h5>
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Benchmark</th>
+            <th scope="col">Mode</th>
+            <th scope="col">Threads</th>
+            <th scope="col">Samples</th>
+            <th scope="col">Score</th>
+            <th scope="col">Score Error (99,9%)</th>
+            <th scope="col">Unit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>fibonacci.FibonacciBenchmark.recursive</td>
+            <td>thrpt</td>
+            <td>1</td>
+            <td>4</td>
+            <td>5962,057514</td>
+            <td>557,707975</td>
+            <td>ops/s</td>
+          </tr>
+          <tr>
+            <td>fibonacci.FibonacciBenchmark.tailRecursive</td>
+            <td>thrpt</td>
+            <td>1</td>
+            <td>4</td>
+            <td>4008972,107</td>
+            <td>104654,183</td>
+            <td>ops/s</td>
+          </tr>
+          <tr>
+            <td>fibonacci.FibonacciBenchmark.iterative</td>
+            <td>thrpt</td>
+            <td>1</td>
+            <td>4</td>
+            <td>3703413,835</td>
+            <td>308887,785</td>
+            <td>ops/s</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="w-100 d-flex aligns-items-center justify-content-center pb-4">
+        <div class="chart-wrap">
+          <div class="grid horizontal">
+            <div class="bar" style="--bar-value:92%;" data-name="Iterative score 92%" title="Iterative score 92%"></div>
+            <div class="bar" style="--bar-value:0.14%;" data-name="Recursive score 0.14%" title="Recursive score 0.14%"></div> 
+            <div class="bar" style="--bar-value:100%;" data-name="Tail recursive score 100%" title="Tail recursive score 100%"></div>              
+          </div>
+        </div>
+      </div>
+      <h5><u>Question:</u> does the <code>@tailrec</code> annotation change the performaces?</h5>
+      <h5><u>Answer:</u> no. It's only used by the compiler to verify for you if your function is tail recursive. If not, you will have a compile error. You can check the benchmark <a href="https://github.com/FrequentlyMissedDeadlines/fibonacci-scala/blob/master/bench.csv">on github</a></h5>
+      <h5>All code is available <a href="https://github.com/FrequentlyMissedDeadlines/fibonacci-scala/blob/master/src/main/scala/fibonacci/FibonacciBenchmark.scala"> on github</a>.</h5>
+
+    </div>
+    <script>hljs.highlightAll();</script>
+  </body>
+</html>
