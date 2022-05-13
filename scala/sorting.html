@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>🦸‍♂️ Coding Interview Hero 🦸‍♀️ - Sorting algorithms</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/cyborg/bootstrap.min.css" integrity="sha384-nEnU7Ae+3lD52AK+RGNzgieBWMnEfgTbRHIwEvp1XXPdqdO6uLTd/NwXbzboqjc2" crossorigin="anonymous">
+    <link rel="stylesheet" href="../style.css">
+    <script async defer src="https://buttons.github.io/buttons.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/felipec.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/languages/scala.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script>
+      MathJax = {
+        options: {
+          enableMenu: false
+        }
+      };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7SQG7BKNBR"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-7SQG7BKNBR');
+    </script>
+  </head>
+  <body>
+    <div class="container-xxl">
+      <h1 class="text-center">🦸‍♂️ Coding Interview Hero 🦸‍♀️</h1>
+      <h2 class="text-center">Sorting algorithms</h2>
+      <br>
+      <h5><u>Exercice:</u> implement the bubble sort of a <code>List[A]</code> with <code>A</code> a generic type using tail recursion.</h5>
+      <pre>
+        <code class="language-scala">import scala.annotation.tailrec
+
+class BubbleSort[A] (implicit ev: A => Ordered[A]) {
+  def sort(list: List[A]): List[A] = {
+    @tailrec
+    def sortRec(iteration: List[A], source: List[A], result: List[A]) : List[A]= source match {
+      case h1 :: h2 :: rest => if(ev(h1) > h2) sortRec(iteration, h1 :: rest, result :+ h2) else sortRec(iteration, h2 :: rest, result :+ h1)
+      case l:: Nil => sortRec(iteration, Nil, result :+ l)
+      case Nil => if(iteration.isEmpty) result else sortRec(iteration.dropRight(1), result, Nil )
+    }
+
+    sortRec(list, list, Nil)
+  }
+}</code>
+      </pre>
+      <h5><u>Question</u>: what is the time complexity? $$ T_n = O(n^2) $$</h5>
+      <h5><u>Exercice:</u> implement the merge sort of a <code>List[A]</code> with <code>A</code> a generic type using tail recursion.</h5>
+      <pre>
+        <code class="language-scala">import scala.annotation.tailrec
+
+class MergeSort[A](implicit ev: A => Ordered[A]) {
+
+  def sort(list: List[A]): List[A] = {
+    val m = list.length / 2
+    if (m == 0) list
+    else {
+      @tailrec
+      def merge(ls: List[A], rs: List[A], acc: List[A] = List()): List[A] = (ls, rs) match {
+        case (Nil, _) => acc ++ rs
+        case (_, Nil) => acc ++ ls
+        case (l :: ls1, r :: rs1) =>
+          if (ev(l) < r) merge(ls1, rs, acc :+ l)
+          else merge(ls, rs1, acc :+ r)
+      }
+      val (l, r) = list splitAt m
+      merge(sort(l), sort(r))
+    }
+  }
+}</code>
+      </pre>
+      <h5><u>Question</u>: what is the time complexity? $$ T_n = O(n\times log(n)) $$</h5>
+      <h5>Then running a JMH benchmark will produce such output:</h5>
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Benchmark</th>
+            <th scope="col">Mode</th>
+            <th scope="col">Threads</th>
+            <th scope="col">Samples</th>
+            <th scope="col">Score</th>
+            <th scope="col">Score Error (99,9%)</th>
+            <th scope="col">Unit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>sort.SortBenchmark.BubbleSort</td>
+            <td>thrpt</td>
+            <td>1</td>
+            <td>4</td>
+            <td>329,785133</td>
+            <td>128,285418</td>
+            <td>ops/s</td>
+          </tr>
+          <tr>
+            <td>sort.SortBenchmark.MergeSort	</td>
+            <td>thrpt</td>
+            <td>1</td>
+            <td>4</td>
+            <td>14395,874073</td>
+            <td>5231,756727</td>
+            <td>ops/s</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="w-100 d-flex aligns-items-center justify-content-center pb-4">
+        <div class="chart-wrap">
+          <div class="grid horizontal">
+            <div class="bar" style="--bar-value:100%;" data-name="Merge sort score 100%" title="Merge sort score 100%"></div>
+            <div class="bar" style="--bar-value:2.2%;" data-name="Bubble sort score 2.2%" title="Bubble sort score 2.2%"></div>              
+          </div>
+        </div>
+      </div>
+
+      <h5>All code is available <a href="https://github.com/FrequentlyMissedDeadlines/coding-interview-scala/blob/master/src/main/scala/sort/SortBenchmark.scala">on github</a>.</h5>
+    </div>
+    <script>hljs.highlightAll();</script>
+  </body>
+</html>
